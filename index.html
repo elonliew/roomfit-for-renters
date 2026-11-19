@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoomFit for Renters</title>
+<style>
+  :root {
+    --bg: #faf9f7; --surface: #ffffff; --ink: #2b2a28; --muted: #7a7672;
+    --line: #e6e3df; --accent: #4a6b57; --accent-soft: #eef3ef;
+    --warn-soft: #fdf3e7; --warn-ink: #a3691f; --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.55; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+  header { padding: 24px 0 8px; }
+  header h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.5px; }
+  header p { color: var(--muted); margin-top: 6px; max-width: 680px; }
+  .demo-note {
+    margin-top: 16px; font-size: 13px; color: var(--warn-ink); background: var(--warn-soft);
+    border: 1px solid #f3ddc0; padding: 10px 14px; border-radius: var(--radius); max-width: 680px;
+  }
+  section { margin-top: 36px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .sec-num {
+    background: var(--accent); color: #fff; font-size: 13px; font-weight: 600;
+    width: 26px; height: 26px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+  }
+  .sec-head h2 { font-size: 20px; font-weight: 600; }
+  .sec-sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; margin-left: 38px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-left: 38px; }
+  @media (max-width: 640px) { .card, .sec-sub { margin-left: 0; } }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  input[type="text"], input[type="number"], select {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px;
+    font: inherit; background: #fff; color: var(--ink);
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  button { font: inherit; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; }
+  button:hover { background: #3d5a49; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* step 1 photo */
+  .dropzone {
+    border: 2px dashed var(--line); border-radius: var(--radius); padding: 26px;
+    text-align: center; color: var(--muted); cursor: pointer; transition: border-color .15s;
+  }
+  .dropzone:hover, .dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
+  .photo-stage-main { margin-top: 14px; }
+  .photo-stage-main img { max-width: 100%; max-height: 340px; border-radius: 10px; border: 1px solid var(--line); display: block; }
+
+  /* checklist */
+  .checklist ul { list-style: none; margin-top: 6px; }
+  .checklist li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .checklist li:first-child { border-top: none; }
+  .checklist .box {
+    width: 18px; height: 18px; border: 1.5px solid var(--accent); border-radius: 4px;
+    flex: none; margin-top: 2px; cursor: pointer; position: relative; background: #fff;
+  }
+  .checklist li.done .box { background: var(--accent); }
+  .checklist li.done .box::after {
+    content: ""; position: absolute; inset: 3px 4px 5px 3px;
+    border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg);
+  }
+  .checklist li.done span.txt { color: var(--muted); text-decoration: line-through; }
+  .ai-note { font-size: 13px; color: var(--muted); background: var(--accent-soft); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+
+  /* furniture */
+  .style-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .style-opt {
+    border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 14px;
+    cursor: pointer; background: #fff; font-size: 14px; font-weight: 600;
+  }
+  .style-opt.sel { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .furn-list { display: grid; gap: 10px; }
+  .furn {
+    display: flex; gap: 14px; align-items: center; border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px; background: #fff; cursor: pointer;
+  }
+  .furn:hover { border-color: var(--accent); }
+  .furn.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .furn .pick {
+    width: 22px; height: 22px; border: 1.5px solid var(--accent); border-radius: 6px;
+    flex: none; position: relative; background: #fff;
+  }
+  .furn.sel .pick { background: var(--accent); }
+  .furn.sel .pick::after {
+    content: ""; position: absolute; inset: 4px 5px 6px 4px;
+    border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg);
+  }
+  .furn .fimg { background: transparent; border: none; }
+  .furn .fimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .furn .fimg .ph { font-size: 26px; line-height: 1; }
+  .furn .fbody { flex: 1; min-width: 0; }
+  .furn .fname { font-weight: 600; font-size: 15px; }
+  .furn .fdim { font-size: 12px; color: var(--muted); }
+  .furn .fnote { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .furn .fprice { font-weight: 600; white-space: nowrap; font-size: 14px; }
+  .furn .fprice small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+  .fit-strip { font-size: 14px; background: var(--accent-soft); padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; }
+
+  /* step 4 summary */
+  .sel-summary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip { background: var(--accent-soft); color: var(--accent); font-size: 13px; padding: 5px 12px; border-radius: 20px; }
+  .total { font-size: 16px; font-weight: 600; margin-top: 12px; }
+
+  /* step 5 overlay */
+  .stage-wrap { position: relative; display: inline-block; max-width: 100%; user-select: none; }
+  .stage-wrap > img.photo-base { display: block; max-width: 100%; border-radius: 10px; border: 1px solid var(--line); pointer-events: none; }
+  .placed {
+    position: absolute; border: 1.5px dashed transparent; border-radius: 8px;
+    cursor: move; overflow: hidden; touch-action: none;
+  }
+  .placed.active { border-color: var(--accent); background: rgba(238,243,239,.25); z-index: 5; }
+  .placed .pimg { width: 100%; height: 100%; object-fit: contain; pointer-events: none; display: block; }
+  .placed .plabel {
+    position: absolute; bottom: 0; left: 0; right: 0; font-size: 9px; text-align: center;
+    color: #fff; padding: 1px 2px; pointer-events: none;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    text-shadow: 0 0 3px rgba(43,42,40,.9), 0 0 2px rgba(43,42,40,.9);
+  }
+  .placed .handle {
+    position: absolute; right: 0; bottom: 12px; width: 16px; height: 16px;
+    background: var(--accent); border-radius: 8px 0 0 8px; cursor: ew-resize; opacity: 0;
+    transition: opacity .12s;
+  }
+  .placed.active .handle { opacity: 1; }
+  .stage-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+  .stage-tools button { margin: 0; padding: 7px 12px; font-size: 13px; }
+  .stage-empty { color: var(--muted); font-size: 14px; padding: 24px; text-align: center; border: 1px dashed var(--line); border-radius: 10px; }
+  footer { margin-top: 48px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>RoomFit for Renters</h1>
+    <p>Photograph your room, note the measurements, pick IKEA pieces that fit, and place them on your own photo to see how it looks — before you spend a sen.</p>
+    <div class="demo-note">Demo app with sample data. Product names, sizes and prices are referenced from the IKEA Malaysia website as examples and may not match current IKEA prices. Nothing you enter or upload is saved between visits.</div>
+  </header>
+
+  <!-- STEP 1 -->
+  <section id="step1">
+    <div class="sec-head"><span class="sec-num">1</span><h2>Take a photo</h2></div>
+    <p class="sec-sub">Upload or take a photo of your room. It stays in this browser tab only.</p>
+    <div class="card">
+      <div class="dropzone" id="dropzone">
+        <strong>Upload a room photo</strong><br>
+        Tap here or drag an image in — or just keep the sample photo below to try the flow.
+        <input type="file" id="fileInput" accept="image/*" hidden>
+      </div>
+      <div class="photo-stage-main" id="photoMain"></div>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section id="step2">
+    <div class="sec-head"><span class="sec-num">2</span><h2>Measurement guidance</h2></div>
+    <p class="sec-sub">For this room, take these measurements and fill them in below.</p>
+    <div class="card">
+      <div class="ai-note">Suggested for your photo: a front-facing room shot usually needs the measurements below. (Sample guidance — a real AI room analysis would appear here.)</div>
+      <div class="checklist">
+        <ul id="checkItems"></ul>
+      </div>
+      <div class="grid2" style="margin-top:16px;">
+        <div>
+          <label for="roomName">Room name</label>
+          <input type="text" id="roomName">
+        </div>
+        <div>
+          <label for="roomType">Room type</label>
+          <select id="roomType">
+            <option>Whole studio unit</option>
+            <option>Master bedroom</option>
+            <option>Median room</option>
+            <option>Small room</option>
+            <option>Living room</option>
+          </select>
+        </div>
+        <div>
+          <label for="wallA">Wall A length (m)</label>
+          <input type="number" id="wallA" step="0.1" min="0">
+          <div class="hint">The wall your photo faces.</div>
+        </div>
+        <div>
+          <label for="wallB">Wall B length (m)</label>
+          <input type="number" id="wallB" step="0.1" min="0">
+          <div class="hint">The side wall, left to right corner.</div>
+        </div>
+        <div>
+          <label for="ceiling">Ceiling height (m)</label>
+          <input type="number" id="ceiling" step="0.1" min="0">
+        </div>
+        <div>
+          <label for="doorWindow">Window &amp; door positions</label>
+          <input type="text" id="doorWindow">
+        </div>
+      </div>
+      <button id="saveRoom" style="margin-top:14px;">Save measurements</button>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section id="step3">
+    <div class="sec-head"><span class="sec-num">3</span><h2>Furniture list</h2></div>
+    <p class="sec-sub">Recommended IKEA pieces for your room size and style — tick the ones you like.</p>
+    <div class="card">
+      <div class="fit-strip" id="fitStrip"></div>
+      <label style="margin-bottom:8px;">Style</label>
+      <div class="style-row" id="styleRow"></div>
+      <div class="furn-list" id="furnList"></div>
+      <div class="hint" style="margin-top:10px;">Sizes are from IKEA Malaysia product pages; prices are examples and may not match current IKEA prices.</div>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section id="step4">
+    <div class="sec-head"><span class="sec-num">4</span><h2>Select items</h2></div>
+    <p class="sec-sub">Your shortlist from Step 3. Add or remove by ticking in the list above.</p>
+    <div class="card">
+      <div class="sel-summary" id="selSummary"></div>
+      <div class="total" id="selTotal"></div>
+    </div>
+  </section>
+
+  <!-- STEP 5 -->
+  <section id="step5">
+    <div class="sec-head"><span class="sec-num">5</span><h2>Place into the photo</h2></div>
+    <p class="sec-sub">Ticked pieces appear here automatically. Drag to move; tap a piece, then drag its green side tab to resize.</p>
+    <div class="card">
+      <div id="stageArea"></div>
+      <div class="stage-tools" id="stageTools"></div>
+      <div class="hint" style="margin-top:8px;">Positions are approximate — this is a visual preview, not a floor plan.</div>
+    </div>
+  </section>
+
+  <footer>RoomFit for Renters — a front-end demo. Furniture names and dimensions reference IKEA Malaysia (ikea.com/my); all prices shown are examples and may not match current IKEA prices. Nothing is saved between visits.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const els = id => document.getElementById(id);
+  const RM = n => "RM " + Math.round(n).toLocaleString("en-MY");
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  /* ---------- state ---------- */
+  const state = {
+    photo: null,            // data/object URL of the room photo
+    photoNatural: null,     // {w,h}
+    room: { name: "Studio, Subang Jaya", type: "Whole studio unit", wallA: 4.2, wallB: 3.4, ceiling: 2.7, doorWindow: "Door on Wall A, window on Wall B" },
+    checkDone: {},
+    style: "Scandi",
+    selected: {},           // id -> true
+    placed: [],             // {uid, itemId, x, y, w} x,y,w in % of stage
+  };
+
+  /* ---------- sample room photo (generated, replaceable) ----------
+     A simple SVG illustration of an empty room, encoded as a data URL.
+     Replace state.photo with any image URL/path to use a real photo. */
+  const SAMPLE_ROOM_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="560" viewBox="0 0 800 560">
+    <rect width="800" height="560" fill="#efe9e1"/>
+    <polygon points="0,0 260,80 800,0" fill="#e2dbd1"/>
+    <polygon points="800,0 800,560 560,480 260,80" fill="#e8e1d7"/>
+    <rect x="0" y="80" width="260" height="480" fill="#e6dfd4"/>
+    <rect x="60" y="140" width="160" height="150" rx="4" fill="#cfe0e8" stroke="#b3c6cf" stroke-width="6"/>
+    <line x1="140" y1="140" x2="140" y2="290" stroke="#b3c6cf" stroke-width="4"/>
+    <line x1="60" y1="215" x2="220" y2="215" stroke="#b3c6cf" stroke-width="4"/>
+    <rect x="600" y="120" width="140" height="300" fill="#d9cfc0"/>
+    <rect x="600" y="120" width="140" height="14" fill="#c4b8a6"/>
+    <rect x="330" y="300" width="220" height="180" fill="#e0d8cb"/>
+    <rect x="330" y="300" width="220" height="180" fill="none" stroke="#cfc5b4" stroke-width="3"/>
+    <text x="400" y="395" font-family="Segoe UI, sans-serif" font-size="18" fill="#a99f8e" text-anchor="middle">sample room photo</text>
+  </svg>`;
+  const SAMPLE_PHOTO_URL = "data:image/svg+xml;utf8," + encodeURIComponent(SAMPLE_ROOM_SVG);
+
+  /* ---------- measurement checklist (sample "AI" guidance) ---------- */
+  const CHECK_ITEMS = [
+    { id: "c1", text: "Wall-to-wall length of the wall facing the camera (Wall A)." },
+    { id: "c2", text: "Side wall length from the front corner to the back corner (Wall B)." },
+    { id: "c3", text: "Floor-to-ceiling height — measure near the window too, ceilings can slope." },
+    { id: "c4", text: "Window position: distance from the corner and sill height from the floor." },
+    { id: "c5", text: "Door swing: width and how far the door opens into the room." },
+    { id: "c6", text: "Where the power sockets are, so tall furniture won't block them." },
+  ];
+
+  /* ---------- furniture data ----------
+     Names/sizes/prices referenced from ikea.com/my as examples.
+     img: svg key into ILLUSTRATIONS below — replace with a path/URL like
+     "photos/kallax.png" (transparent background works best) to use a real photo. */
+  const FURNITURE = [
+    { id: "f1", name: "KALLAX shelving unit, 77×77 cm", wcm: 77, hcm: 77, price: 179, styles: ["Scandi", "Minimal"], cat: "storage", img: "kallax",
+      note: "Open shelf that works standing or lying — a renter favourite for books and storage boxes." },
+    { id: "f2", name: "MICKE desk, 105×50 cm", wcm: 105, hcm: 75, price: 399, styles: ["Study-First", "Minimal", "Scandi"], cat: "desk", img: "desk",
+      note: "Study/WFH desk with hidden cable management at the back." },
+    { id: "f3", name: "MICKE desk, small 73×50 cm", wcm: 73, hcm: 75, price: 199, styles: ["Study-First", "Minimal"], cat: "desk", img: "desk",
+      note: "Compact version for tight rooms — still fits a laptop, lamp and drawer." },
+    { id: "f4", name: "LACK coffee table, 90×55 cm", wcm: 90, hcm: 45, price: 99, styles: ["Scandi", "Warm", "Minimal"], cat: "table", img: "coffee",
+      note: "Light and easy to move aside when you need floor space." },
+    { id: "f5", name: "KLEPPSTAD wardrobe, 2 doors, 79×55×176 cm", wcm: 79, hcm: 176, price: 399, styles: ["Scandi", "Minimal", "Warm"], cat: "wardrobe", img: "wardrobe2",
+      note: "Slim two-door wardrobe for smaller bedrooms." },
+    { id: "f6", name: "KLEPPSTAD wardrobe, 3 doors, 117×55×176 cm", wcm: 117, hcm: 176, price: 599, styles: ["Scandi", "Minimal", "Warm"], cat: "wardrobe", img: "wardrobe3",
+      note: "Extra hanging width; needs a clear wall about 1.2 m long." },
+    { id: "f7", name: "SONGESAND bed frame, 160×200 cm", wcm: 160, hcm: 200, price: 499, styles: ["Warm", "Scandi"], cat: "bed", img: "bed",
+      note: "Classic frame with room for storage boxes underneath." },
+    { id: "f8", name: "RÅSKOG trolley, 35×45×77 cm", wcm: 35, hcm: 77, price: 99, styles: ["Study-First", "Scandi", "Minimal"], cat: "storage", img: "trolley",
+      note: "Rolling storage that tucks beside a desk or wardrobe — easy to take along when you move." },
+    { id: "f9", name: "LACK side table, 55×55 cm", wcm: 55, hcm: 45, price: 59, styles: ["Scandi", "Minimal", "Warm"], cat: "table", img: "side",
+      note: "Small bedside or sofa-side table; feather-light to rearrange." },
+    { id: "f10", name: "KLEPPSTAD shoe cabinet, 80×35×117 cm", wcm: 80, hcm: 117, price: 359, styles: ["Minimal", "Warm"], cat: "storage", img: "shoe",
+      note: "Slim shoe storage for the entry corner of a studio." },
+  ];
+
+  /* Hand-drawn SVG illustrations with transparent backgrounds.
+     Each is drawn inside a 100×100 viewBox scaled to the item's real
+     width:height ratio, so proportions stay honest. */
+  const WOOD = "#c8a06a", WOOD_D = "#a67f4e", WHITE = "#f4f1ea", WHITE_D = "#d8d2c4", INK = "#6b6459";
+  const ILLUSTRATIONS = {
+    kallax: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="10" width="92" height="80" rx="3" fill="${WHITE}" stroke="${INK}" stroke-width="2.5"/>
+      <line x1="4" y1="36" x2="96" y2="36" stroke="${WHITE_D}" stroke-width="4"/>
+      <line x1="4" y1="64" x2="96" y2="64" stroke="${WHITE_D}" stroke-width="4"/>
+      <line x1="36" y1="10" x2="36" y2="90" stroke="${WHITE_D}" stroke-width="4"/>
+      <line x1="68" y1="10" x2="68" y2="90" stroke="${WHITE_D}" stroke-width="4"/>
+      <rect x="10" y="18" width="20" height="12" fill="#9db8a5"/><rect x="42" y="42" width="20" height="16" fill="#d9b26a"/>
+      <circle cx="82" cy="24" r="6" fill="#c97b5e"/></svg>`,
+    desk: `<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="26" width="128" height="10" rx="2" fill="${WOOD}" stroke="${INK}" stroke-width="2"/>
+      <rect x="14" y="36" width="8" height="52" fill="${WOOD_D}"/><rect x="118" y="36" width="8" height="52" fill="${WOOD_D}"/>
+      <rect x="26" y="38" width="34" height="22" rx="2" fill="${WHITE}" stroke="${WHITE_D}" stroke-width="2"/>
+      <rect x="72" y="10" width="34" height="14" rx="2" fill="#5d6d7e"/><rect x="86" y="24" width="6" height="4" fill="${INK}"/>
+      <rect x="112" y="14" width="4" height="14" fill="${INK}"/><circle cx="114" cy="12" r="4" fill="#e8c46a"/></svg>`,
+    coffee: `<svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="10" width="112" height="9" rx="2" fill="${WOOD}" stroke="${INK}" stroke-width="2"/>
+      <rect x="12" y="19" width="7" height="30" fill="${WOOD_D}"/><rect x="101" y="19" width="7" height="30" fill="${WOOD_D}"/>
+      <circle cx="42" cy="4" r="5" fill="${WHITE}" stroke="${WHITE_D}" stroke-width="2"/></svg>`,
+    wardrobe2: `<svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="4" width="68" height="92" rx="3" fill="${WHITE}" stroke="${INK}" stroke-width="2.5"/>
+      <line x1="40" y1="4" x2="40" y2="96" stroke="${WHITE_D}" stroke-width="3"/>
+      <circle cx="35" cy="50" r="2.5" fill="${INK}"/><circle cx="45" cy="50" r="2.5" fill="${INK}"/>
+      <rect x="10" y="14" width="24" height="30" fill="#9db8a5" opacity=".5"/></svg>`,
+    wardrobe3: `<svg viewBox="0 0 117 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="4" width="109" height="92" rx="3" fill="${WHITE}" stroke="${INK}" stroke-width="2.5"/>
+      <line x1="40" y1="4" x2="40" y2="96" stroke="${WHITE_D}" stroke-width="3"/>
+      <line x1="77" y1="4" x2="77" y2="96" stroke="${WHITE_D}" stroke-width="3"/>
+      <circle cx="35" cy="50" r="2.5" fill="${INK}"/><circle cx="45" cy="50" r="2.5" fill="${INK}"/><circle cx="82" cy="50" r="2.5" fill="${INK}"/></svg>`,
+    bed: `<svg viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="20" width="148" height="60" rx="6" fill="${WHITE}" stroke="${INK}" stroke-width="2.5"/>
+      <rect x="6" y="10" width="20" height="70" rx="4" fill="${WOOD}" stroke="${INK}" stroke-width="2"/>
+      <rect x="28" y="24" width="58" height="26" rx="8" fill="#ffffff" stroke="${WHITE_D}" stroke-width="2"/>
+      <rect x="30" y="26" width="24" height="22" rx="6" fill="#9db8a5"/>
+      <rect x="10" y="72" width="8" height="14" fill="${WOOD_D}"/><rect x="142" y="72" width="8" height="14" fill="${WOOD_D}"/>
+      <line x1="86" y1="30" x2="154" y2="30" stroke="${WHITE_D}" stroke-width="3"/></svg>`,
+    trolley: `<svg viewBox="0 0 50 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="8" width="34" height="10" rx="2" fill="#4a6b57" stroke="${INK}" stroke-width="2"/>
+      <rect x="10" y="34" width="30" height="10" rx="2" fill="#4a6b57" stroke="${INK}" stroke-width="2"/>
+      <rect x="10" y="60" width="30" height="10" rx="2" fill="#4a6b57" stroke="${INK}" stroke-width="2"/>
+      <line x1="12" y1="18" x2="12" y2="84" stroke="${INK}" stroke-width="2.5"/>
+      <line x1="38" y1="18" x2="38" y2="84" stroke="${INK}" stroke-width="2.5"/>
+      <circle cx="12" cy="90" r="6" fill="none" stroke="${INK}" stroke-width="2.5"/>
+      <circle cx="38" cy="90" r="6" fill="none" stroke="${INK}" stroke-width="2.5"/></svg>`,
+    side: `<svg viewBox="0 0 70 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="8" width="58" height="8" rx="2" fill="${WOOD}" stroke="${INK}" stroke-width="2"/>
+      <rect x="12" y="16" width="6" height="34" fill="${WOOD_D}"/><rect x="52" y="16" width="6" height="34" fill="${WOOD_D}"/>
+      <rect x="22" y="0" width="10" height="8" rx="1" fill="#5d6d7e"/></svg>`,
+    shoe: `<svg viewBox="0 0 90 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="4" width="74" height="92" rx="3" fill="${WHITE}" stroke="${INK}" stroke-width="2.5"/>
+      <line x1="8" y1="34" x2="82" y2="34" stroke="${WHITE_D}" stroke-width="3"/>
+      <line x1="8" y1="64" x2="82" y2="64" stroke="${WHITE_D}" stroke-width="3"/>
+      <path d="M20 24 q4 -8 12 -6 q6 2 6 8" fill="none" stroke="#c97b5e" stroke-width="4"/>
+      <path d="M30 54 q4 -8 12 -6 q6 2 6 8" fill="none" stroke="#5d6d7e" stroke-width="4"/></svg>`,
+  };
+  function itemImage(img, cls, alt) {
+    const ill = ILLUSTRATIONS[img];
+    if (ill) {
+      return `<svg class="${cls}" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(alt)}" style="width:100%;height:100%;">${ill.replace('<svg ', '<svg preserveAspectRatio="xMidYMid meet" ')}</svg>`;
+    }
+    if (img && /[./]/.test(img)) return `<img class="${cls}" src="${esc(img)}" alt="${esc(alt)}">`;
+    return `<span class="${cls}">${esc(img)}</span>`;
+  }
+  function itemRatio(f) { return f.wcm / (f.hcm || f.wcm); }
+  const STYLES = [
+    { key: "Scandi", name: "Scandi Calm" },
+    { key: "Minimal", name: "Minimal" },
+    { key: "Warm", name: "Warm Wood" },
+    { key: "Study-First", name: "Study-First" },
+  ];
+
+  function itemImageOld_removed() {}
+
+  /* ---------- step 1: photo ---------- */
+  const dz = els("dropzone"), fi = els("fileInput");
+  dz.addEventListener("click", () => fi.click());
+  dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("over"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("over"));
+  dz.addEventListener("drop", e => {
+    e.preventDefault(); dz.classList.remove("over");
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f && f.type.startsWith("image/")) setPhotoFromFile(f);
+  });
+  fi.addEventListener("change", () => {
+    if (fi.files && fi.files[0]) setPhotoFromFile(fi.files[0]);
+    fi.value = "";
+  });
+  function setPhotoFromFile(f) {
+    const url = URL.createObjectURL(f);
+    state.photo = url;
+    renderPhoto();
+  }
+  function renderPhoto() {
+    const url = state.photo || SAMPLE_PHOTO_URL;
+    els("photoMain").innerHTML = `<img src="${url}" alt="Room photo">`;
+    const base = new Image();
+    base.onload = () => { state.photoNatural = { w: base.width, h: base.height }; renderStage(); };
+    base.src = url;
+  }
+
+  /* ---------- step 2: checklist + measurements ---------- */
+  function renderChecklist() {
+    els("checkItems").innerHTML = CHECK_ITEMS.map(it => `
+      <li class="${state.checkDone[it.id] ? "done" : ""}" data-id="${it.id}">
+        <span class="box" role="checkbox" aria-checked="${!!state.checkDone[it.id]}"></span>
+        <span class="txt">${esc(it.text)}</span>
+      </li>`).join("");
+    els("checkItems").querySelectorAll("li .box").forEach(b => {
+      b.addEventListener("click", () => {
+        state.checkDone[b.parentElement.dataset.id] = !state.checkDone[b.parentElement.dataset.id];
+        renderChecklist();
+      });
+    });
+  }
+  function fillRoomForm() {
+    els("roomName").value = state.room.name;
+    els("roomType").value = state.room.type;
+    els("wallA").value = state.room.wallA;
+    els("wallB").value = state.room.wallB;
+    els("ceiling").value = state.room.ceiling;
+    els("doorWindow").value = state.room.doorWindow;
+  }
+  els("saveRoom").addEventListener("click", () => {
+    state.room = {
+      name: els("roomName").value.trim() || "My space",
+      type: els("roomType").value,
+      wallA: parseFloat(els("wallA").value) || 0,
+      wallB: parseFloat(els("wallB").value) || 0,
+      ceiling: parseFloat(els("ceiling").value) || 0,
+      doorWindow: els("doorWindow").value.trim(),
+    };
+    renderFurniture();
+    renderSelection();
+  });
+
+  /* ---------- step 3: furniture list ---------- */
+  function roomArea() {
+    return (state.room.wallA && state.room.wallB) ? state.room.wallA * state.room.wallB : null;
+  }
+  function renderStyles() {
+    els("styleRow").innerHTML = STYLES.map(s =>
+      `<div class="style-opt ${state.style === s.key ? "sel" : ""}" data-key="${s.key}" role="button" tabindex="0">${s.name}</div>`).join("");
+    els("styleRow").querySelectorAll(".style-opt").forEach(el => {
+      el.addEventListener("click", () => { state.style = el.dataset.key; renderFurniture(); });
+    });
+  }
+  function renderFurniture() {
+    const area = roomArea();
+    els("fitStrip").textContent = area === null
+      ? "Fill in your wall lengths in Step 2 to size these to your room."
+      : `${state.room.name} · ${area.toFixed(1)} m² (${state.room.wallA} m × ${state.room.wallB} m)` +
+        (state.room.ceiling ? ` · ceiling ${state.room.ceiling} m` : "") +
+        ` · style: ${STYLES.find(s => s.key === state.style).name}`;
+    const list = FURNITURE.map(f => {
+      const styleOk = f.styles.includes(state.style);
+      const fits = area === null || (f.wcm / 100) <= Math.max(state.room.wallA, state.room.wallB);
+      return { ...f, rank: (styleOk ? 2 : 0) + (fits ? 1 : 0), fits, styleOk };
+    }).sort((a, b) => b.rank - a.rank);
+    els("furnList").innerHTML = list.map(f => `
+      <div class="furn ${state.selected[f.id] ? "sel" : ""}" data-id="${f.id}" role="checkbox" aria-checked="${!!state.selected[f.id]}" tabindex="0">
+        <span class="pick"></span>
+        <div class="fimg">${itemImage(f.img, "ph", f.name)}</div>
+        <div class="fbody">
+          <div class="fname">${esc(f.name)}</div>
+          <div class="fdim">${f.wcm} × ${f.hcm} cm ${f.styleOk ? "" : "· outside your style pick, but works with it"}</div>
+          <div class="fnote">${esc(f.note)}</div>
+        </div>
+        <div class="fprice">${RM(f.price)}<small>example price</small></div>
+      </div>`).join("");
+    els("furnList").querySelectorAll(".furn").forEach(el => {
+      el.addEventListener("click", () => {
+        const id = el.dataset.id;
+        if (state.selected[id]) {
+          delete state.selected[id];
+          state.placed = state.placed.filter(p => p.itemId !== id);
+        } else {
+          state.selected[id] = true;
+          placeItem(id);
+        }
+        renderFurniture();
+        renderSelection();
+        renderStage();
+      });
+    });
+  }
+
+  /* ---------- auto-placement: to-scale size, spread-out positions ---------- */
+  function placeItem(id) {
+    const f = FURNITURE.find(x => x.id === id);
+    if (!f) return;
+    // real width as % of the stage: scale against the room's Wall A (front wall)
+    const nat = state.photoNatural || { w: 800, h: 560 };
+    const roomM = state.room.wallA || 4.2;          // metres across the photo's front wall
+    let wPct = ((f.wcm / 100) / roomM) * 100;       // honest scale vs room width
+    // keep oversized items usable but visibly big
+    wPct = Math.min(90, Math.max(6, wPct));
+    const stageAspect = nat.w / nat.h;              // stage px per % relationships
+    // spread positions: cycle through a set of floor spots
+    const SPOTS = [
+      { x: 34, y: 62 }, { x: 62, y: 58 }, { x: 8, y: 64 }, { x: 44, y: 30 },
+      { x: 70, y: 30 }, { x: 20, y: 36 }, { x: 55, y: 74 }, { x: 12, y: 78 },
+    ];
+    const spot = SPOTS[state.placed.length % SPOTS.length];
+    state.placed.push({
+      uid: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
+      itemId: id, x: spot.x, y: spot.y, w: wPct, active: false,
+    });
+  }
+
+  /* ---------- step 4: selection summary ---------- */
+  function selectedItems() {
+    return FURNITURE.filter(f => state.selected[f.id]);
+  }
+  function renderSelection() {
+    const sel = selectedItems();
+    if (!sel.length) {
+      els("selSummary").innerHTML = `<span class="hint">Nothing selected yet — tick furniture in Step 3 to build your shortlist.</span>`;
+      els("selTotal").textContent = "";
+      return;
+    }
+    els("selSummary").innerHTML = sel.map(f =>
+      `<span class="chip">${esc(f.name)} · ${RM(f.price)}</span>`).join("");
+    els("selTotal").textContent = `${sel.length} item${sel.length > 1 ? "s" : ""} · example total ${RM(sel.reduce((s, f) => s + f.price, 0))} (examples, not current IKEA prices)`;
+  }
+
+  /* ---------- step 5: place into photo ---------- */
+  function renderStage() {
+    const area = els("stageArea");
+    if (!state.photo && !SAMPLE_PHOTO_URL) { area.innerHTML = ""; return; }
+    if (!state.photo) state.photo = null; // base always falls back to sample
+    const url = state.photo || SAMPLE_PHOTO_URL;
+    const sel = selectedItems();
+    const placedNotSelected = state.placed.filter(p => !sel.find(f => f.id === p.itemId));
+    if (placedNotSelected.length) state.placed = state.placed.filter(p => sel.find(f => f.id === p.itemId));
+    const html = `
+      <div class="stage-wrap" id="stage">
+        <img class="photo-base" src="${url}" alt="Room photo with furniture placed on top">
+        ${state.placed.map(p => {
+          const f = FURNITURE.find(x => x.id === p.itemId);
+          const nat = state.photoNatural || { w: 800, h: 560 };
+          const hPct = p.w / (nat.w / nat.h) / itemRatio(f);
+          return `<div class="placed ${p.active ? "active" : ""}" data-uid="${p.uid}"
+                 style="left:${p.x}%; top:${p.y}%; width:${p.w}%; height:${hPct.toFixed(2)}%;">
+            ${itemImage(f.img, "pimg", f.name)}
+            <span class="plabel">${esc(f.name.split(",")[0])}</span>
+            <span class="handle"></span>
+          </div>`;
+        }).join("")}
+      </div>`;
+    area.innerHTML = sel.length || state.placed.length
+      ? html
+      : html + `<div class="stage-empty" style="margin-top:10px;">No furniture placed yet — tick pieces in Step 3 and they will appear here on your photo.</div>`;
+    wireStage();
+    els("stageTools").innerHTML = `<span class="hint">${sel.length
+      ? "Tick another item in Step 3 to place it too. Drag to move; drag the green tab (appears when you tap a piece) to resize."
+      : "Tick furniture in Step 3 and it will appear here on your photo automatically."}</span>`;
+  }
+  function wireStage() {
+    const stage = els("stage");
+    if (!stage) return;
+    stage.querySelectorAll(".placed").forEach(el => {
+      const p = state.placed.find(pp => pp.uid === el.dataset.uid);
+      if (!p) return;
+      el.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        const resizing = e.target.classList.contains("handle");
+        const r = stage.getBoundingClientRect();
+        const sx = e.clientX, sy = e.clientY, ox = p.x, oy = p.y, ow = p.w;
+        el.classList.add("active");
+        const onMove = ev => {
+          if (resizing) {
+            p.w = Math.min(90, Math.max(6, ow + ((ev.clientX - sx) / r.width) * 100));
+            el.style.width = p.w + "%";
+            const nat = state.photoNatural || { w: 800, h: 560 };
+            const f = FURNITURE.find(x => x.id === p.itemId);
+            el.style.height = (p.w / (nat.w / nat.h) / itemRatio(f)).toFixed(2) + "%";
+          } else {
+            p.x = Math.min(95, Math.max(0, ox + ((ev.clientX - sx) / r.width) * 100));
+            p.y = Math.min(92, Math.max(0, oy + ((ev.clientY - sy) / r.height) * 100));
+            el.style.left = p.x + "%"; el.style.top = p.y + "%";
+          }
+        };
+        const onUp = () => {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          el.classList.remove("active");
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+      });
+    });
+  }
+
+  /* ---------- init: never open empty ---------- */
+  fillRoomForm();
+  renderChecklist();
+  renderStyles();
+  renderFurniture();
+  renderSelection();
+  renderPhoto();
+})();
+</script>
+</body>
+</html>
